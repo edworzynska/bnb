@@ -23,7 +23,6 @@ class UserControllerTest {
     @Autowired
     private UserController userController;
 
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -81,4 +80,5 @@ class UserControllerTest {
                 .andExpect(status().is4xxClientError())
                 .andExpect(content().string("An account with this email address already exists!"));
     }
+
 }

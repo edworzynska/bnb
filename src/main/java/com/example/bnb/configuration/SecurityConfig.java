@@ -22,6 +22,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .formLogin(formLogin -> formLogin
                         .loginPage("/login")
+                        .usernameParameter("email")
                         .defaultSuccessUrl("/home", true)
                         .permitAll())
                 .logout(logout -> logout

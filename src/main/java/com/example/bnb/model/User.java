@@ -6,6 +6,7 @@ import org.hibernate.annotations.IdGeneratorType;
 
 import javax.naming.InvalidNameException;
 import java.security.InvalidParameterException;
+import java.util.List;
 
 @Data
 @Entity
@@ -18,6 +19,9 @@ public class User {
 
     @Column(name = "name")
     private String name;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user", cascade = CascadeType.ALL)
+    List<Space> spaces;
 
     @Column(name = "email")
     private String email;
