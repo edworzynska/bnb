@@ -73,36 +73,12 @@ class SpaceControllerTest {
         user2.setEmail("newuser@users.com");
         user2.setPassword(passwordEncoder.encode("newpassword1!"));
         userRepository.save(user2);
-
-//        testSpace1 = new Space();
-//        testSpace1.setUser(user);
-//        testSpace1.setDescription("test description 1");
-//        testSpace1.setPricePerNight(new BigDecimal("70"));
-//        spaceRepository.save(testSpace1);
-//
-//        testSpace2 = new Space();
-//        testSpace2.setUser(user2);
-//        testSpace2.setDescription("test description 2");
-//        testSpace2.setPricePerNight(new BigDecimal("130"));
-//        spaceRepository.save(testSpace2);
-//
-//        testSpaceAvailability1 = new SpaceAvailability();
-//        testSpaceAvailability1.setSpace(testSpace1);
-//        testSpaceAvailability1.setDate(LocalDate.of(2025, 12, 12));
-//        spaceAvailabilityRepository.save(testSpaceAvailability1);
-//
-//        testSpaceAvailability2 = new SpaceAvailability();
-//        testSpaceAvailability2.setSpace(testSpace1);
-//        testSpaceAvailability2.setDate(LocalDate.of(2025, 12, 13));
-//        spaceAvailabilityRepository.save(testSpaceAvailability2);
-//
-
     }
 
     @Test
     @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void addsSpaceWithLoggedUser() throws Exception {
-        mockMvc.perform(post("/add-space")
+        mockMvc.perform(post("/spaces/add-space")
                 .param("description", "Test Description")
                 .param("price", "40"))
                 .andExpect(status().isCreated())
@@ -112,7 +88,7 @@ class SpaceControllerTest {
     @Test
     @WithAnonymousUser
     void anonymousUserIsRedirectedToLoginPage() throws Exception {
-        mockMvc.perform(post("/add-space")
+        mockMvc.perform(post("/spaces/add-space")
                         .param("description", "Test Description")
                         .param("price", "40"))
                 .andExpect(status().is3xxRedirection())
@@ -122,7 +98,7 @@ class SpaceControllerTest {
     @Test
     @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsInvalidParameterExceptionIfDescriptionIsEmpty() throws Exception {
-        mockMvc.perform(post("/add-space")
+        mockMvc.perform(post("/spaces/add-space")
                         .param("description", "")
                         .param("price", "40"))
                 .andExpect(status().is4xxClientError())
@@ -131,7 +107,7 @@ class SpaceControllerTest {
     @Test
     @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsInvalidParameterExceptionIfDescriptionIsBlank() throws Exception {
-        mockMvc.perform(post("/add-space")
+        mockMvc.perform(post("/spaces/add-space")
                         .param("description", "      ")
                         .param("price", "40"))
                 .andExpect(status().is4xxClientError())
@@ -140,7 +116,7 @@ class SpaceControllerTest {
     @Test
     @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsInvalidParameterExceptionIfPriceIsNegative() throws Exception {
-        mockMvc.perform(post("/add-space")
+        mockMvc.perform(post("/spaces/add-space")
                         .param("description", "Content")
                         .param("price", "-2"))
                 .andExpect(status().is4xxClientError())
@@ -149,7 +125,7 @@ class SpaceControllerTest {
     @Test
     @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsInvalidParameterExceptionIfPriceIsZero() throws Exception {
-        mockMvc.perform(post("/add-space")
+        mockMvc.perform(post("/spaces/add-space")
                         .param("description", "Content")
                         .param("price", "0"))
                 .andExpect(status().is4xxClientError())
@@ -158,7 +134,7 @@ class SpaceControllerTest {
     @Test
     @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsMissingParameterExceptionIfPriceIsEmpty() throws Exception {
-        mockMvc.perform(post("/add-space")
+        mockMvc.perform(post("/spaces/add-space")
                         .param("description", "Content")
                         .param("price", ""))
                 .andExpect(status().is4xxClientError())
@@ -167,7 +143,7 @@ class SpaceControllerTest {
     @Test
     @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsMissingParameterExceptionIfDescriptionParameterIsMissing() throws Exception {
-        mockMvc.perform(post("/add-space")
+        mockMvc.perform(post("/spaces/add-space")
                         .param("price", "20"))
                 .andExpect(status().is4xxClientError())
                 .andExpect(content().string("Missing parameter: description"));

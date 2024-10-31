@@ -115,7 +115,6 @@ public class BookingServiceTest {
         when(spaceRepository.findById(1L)).thenReturn(Optional.of(mockedSpace));
         when(spaceAvailabilityService.isSpaceAvailableInDates(1L, List.of())).thenReturn(true);
 
-
         InvalidParameterException e = assertThrows(InvalidParameterException.class, ()-> bookingService.createBooking(1L, "test@user.com", List.of()));
         assertEquals("Please select dates!", e.getMessage());
         verify(bookingRepository, never()).save(any(Booking.class));

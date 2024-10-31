@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
+@RequestMapping("/booking")
 public class BookingController {
 
     @Autowired
@@ -71,7 +72,7 @@ public class BookingController {
             return new ResponseEntity<>("Booking requested successfully! Please wait for approval.", HttpStatus.CREATED);
         }
     }
-    @PostMapping("/spaces/{id}/bookings/approve")
+    @PostMapping("/spaces/{id}/approve")
     public ResponseEntity<Object> approveBooking(
             @PathVariable Long id,
             @RequestBody List<Long> bookingsIds){
@@ -85,8 +86,26 @@ public class BookingController {
             return new ResponseEntity<>("Access denied!", HttpStatus.FORBIDDEN);
         }
         else {
-            bookingService.approveBookings(spaceId, spaceOwner, bookingsIds);
+            bookingService.approveBookings(spaceId, bookingsIds);
             return new ResponseEntity<>("Bookings approved successfully!", HttpStatus.OK);
+        }
+    }
+    @PostMapping("/spaces/{id}/deny")
+    public ResponseEntity<Object> denyBooking(
+            @PathVariable Long id,
+            @RequestBody List<Long> bookingsIds){
+
+        String loggedUser = loggedUser();
+        Space space = spaceRepository.findById(id).orElseThrow(EntityNotFoundException::new);
+        Long spaceId = space.getId();
+        var spaceOwner = space.getUser().getEmail();
+
+        if (!loggedUser.equals(spaceOwner)){
+            return new ResponseEntity<>("Access denied!", HttpStatus.FORBIDDEN);
+        }
+        else {
+            bookingService.denyBookings(bookingsIds);
+            return new ResponseEntity<>("Bookings denied successfully!", HttpStatus.OK);
         }
     }
 }

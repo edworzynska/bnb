@@ -115,7 +115,7 @@ class BookingControllerTest {
     @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorWhileCreatingNewBookingAsOwner() throws Exception {
         Long id = testSpaceBooking1.getId();
-        mockMvc.perform(post("/spaces/{id}/request-booking", id)
+        mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
                 .param("startDate", "5/1/25")
                 .param("endDate", "5/2/25"))
                 .andExpect(status().is4xxClientError())
@@ -125,7 +125,7 @@ class BookingControllerTest {
     @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void createsNewBookingAsLoggedUser() throws Exception {
         Long id = testSpaceBooking1.getId();
-        mockMvc.perform(post("/spaces/{id}/request-booking", id)
+        mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
                         .param("startDate", "5/1/25")
                         .param("endDate", "5/2/25"))
                 .andExpect(status().isCreated())
@@ -136,7 +136,7 @@ class BookingControllerTest {
     @WithAnonymousUser
     void redirectsAnonymousUser() throws Exception{
         Long id = testSpaceBooking1.getId();
-        mockMvc.perform(post("/spaces/{id}/request-booking", id)
+        mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
                 .param("startDate", "5/1/25")
                 .param("endDate", "5/2/25"))
                 .andExpect(status().is3xxRedirection());
@@ -145,7 +145,7 @@ class BookingControllerTest {
     @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorWhileCreatingNewBookingWithDatesInThePast() throws Exception {
         Long id = testSpaceBooking1.getId();
-        mockMvc.perform(post("/spaces/{id}/request-booking", id)
+        mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
                         .param("startDate", "5/1/24")
                         .param("endDate", "5/2/24"))
                 .andExpect(status().is4xxClientError())
@@ -155,7 +155,7 @@ class BookingControllerTest {
     @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorWhileCreatingNewBookingWithUnavailableDates() throws Exception {
         Long id = testSpaceBooking1.getId();
-        mockMvc.perform(post("/spaces/{id}/request-booking", id)
+        mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
                         .param("startDate", "5/1/25")
                         .param("endDate", "5/7/25"))
                 .andExpect(status().is4xxClientError())
@@ -166,7 +166,7 @@ class BookingControllerTest {
     void returnsErrorWhileCreatingNewBookingWithBookedDates() throws Exception {
         Long id = testSpaceBooking1.getId();
         spaceAvailabilityService.setUnavailable(id, List.of(LocalDate.of(2025, 5, 1)));
-        mockMvc.perform(post("/spaces/{id}/request-booking", id)
+        mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
                         .param("startDate", "5/1/25")
                         .param("endDate", "5/2/25"))
                 .andExpect(status().is4xxClientError())
@@ -177,7 +177,7 @@ class BookingControllerTest {
     void returnsErrorWhileCreatingNewBookingWithBookedDates2() throws Exception {
         Long id = testSpaceBooking1.getId();
         spaceAvailabilityService.setUnavailable(id, List.of(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 2)));
-        mockMvc.perform(post("/spaces/{id}/request-booking", id)
+        mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
                         .param("startDate", "5/1/25")
                         .param("endDate", "5/2/25"))
                 .andExpect(status().is4xxClientError())
@@ -195,7 +195,7 @@ class BookingControllerTest {
         Long idBooking1 = booking1.getId();
         Long id = testSpaceBooking1.getId();
 
-        mockMvc.perform(post("/spaces/{id}/bookings/approve", id)
+        mockMvc.perform(post("/booking/spaces/{id}/approve", id)
                         .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("[%s, %s]", idBooking, idBooking1)))
                 .andExpect(status().is4xxClientError())
@@ -212,7 +212,7 @@ class BookingControllerTest {
         Long idBooking1 = booking1.getId();
         Long id = testSpaceBooking1.getId();
 
-        mockMvc.perform(post("/spaces/{id}/bookings/approve", id)
+        mockMvc.perform(post("/booking/spaces/{id}/approve", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("[%s, %s]", idBooking, idBooking1)))
                 .andExpect(status().isOk())
@@ -229,7 +229,7 @@ class BookingControllerTest {
         Long idBooking1 = booking1.getId();
         Long id = testSpaceBooking1.getId();
 
-        mockMvc.perform(post("/spaces/{id}/bookings/approve", id)
+        mockMvc.perform(post("/booking/spaces/{id}/approve", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("[%s, %s]", idBooking, idBooking1)))
                 .andExpect(status().is4xxClientError())
@@ -247,7 +247,75 @@ class BookingControllerTest {
         Long idBooking1 = booking1.getId();
         Long id = testSpaceBooking1.getId();
 
-        mockMvc.perform(post("/spaces/{id}/bookings/approve", id)
+        mockMvc.perform(post("/booking/spaces/{id}/approve", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("[%s, %s]", idBooking, idBooking1)))
+                .andExpect(status().is3xxRedirection());
+    }
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void throwsMessageAndDeniesIfSpaceOwnerDeniesBookingInUnavailableDates() throws Exception {
+        Booking booking = new Booking(testSpaceBooking1, userBooking, LocalDate.of(2025,10,1));
+        Booking booking1 = new Booking(testSpaceBooking1, userBooking, LocalDate.of(2025,10,2));
+        bookingRepository.save(booking);
+        bookingRepository.save(booking1);
+        Long idBooking = booking.getId();
+        Long idBooking1 = booking1.getId();
+        Long id = testSpaceBooking1.getId();
+
+        mockMvc.perform(post("/booking/spaces/{id}/deny", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("[%s, %s]", idBooking, idBooking1)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(content().string("Unable to process the request - space is not available in selected dates."));
+    }
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void spaceOwnerDeniesBooking() throws Exception {
+        Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
+        Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
+        bookingRepository.save(booking);
+        bookingRepository.save(booking1);
+        Long idBooking = booking.getId();
+        Long idBooking1 = booking1.getId();
+        Long id = testSpaceBooking1.getId();
+
+        mockMvc.perform(post("/booking/spaces/{id}/deny", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("[%s, %s]", idBooking, idBooking1)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Bookings denied successfully!"));
+    }
+    @Test
+    @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void differentUserDeniesBooking() throws Exception {
+        Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
+        Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
+        bookingRepository.save(booking);
+        bookingRepository.save(booking1);
+        Long idBooking = booking.getId();
+        Long idBooking1 = booking1.getId();
+        Long id = testSpaceBooking1.getId();
+
+        mockMvc.perform(post("/booking/spaces/{id}/deny", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("[%s, %s]", idBooking, idBooking1)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(content().string("Access denied!"));
+    }
+
+    @Test
+    @WithAnonymousUser
+    void redirectsAnonymousUserWhoTriesToAccessDenialEndpoint() throws Exception {
+        Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
+        Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
+        bookingRepository.save(booking);
+        bookingRepository.save(booking1);
+        Long idBooking = booking.getId();
+        Long idBooking1 = booking1.getId();
+        Long id = testSpaceBooking1.getId();
+
+        mockMvc.perform(post("/booking/spaces/{id}/deny", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("[%s, %s]", idBooking, idBooking1)))
                 .andExpect(status().is3xxRedirection());

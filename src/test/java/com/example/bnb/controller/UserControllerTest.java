@@ -80,5 +80,4 @@ class UserControllerTest {
                 .andExpect(status().is4xxClientError())
                 .andExpect(content().string("An account with this email address already exists!"));
     }
-
 }

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
+@RequestMapping("/spaces")
 public class SpaceController {
 
     @Autowired
@@ -49,7 +50,7 @@ public class SpaceController {
 
         return new ResponseEntity<>("Space posted successfully!", HttpStatus.CREATED);
     }
-    @GetMapping("/spaces/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<Object> viewSpace
             (@PathVariable Long id){
         Space space = spaceService.getSpace(id);
@@ -58,7 +59,7 @@ public class SpaceController {
         return new ResponseEntity<>(spaceDTO, HttpStatus.OK);
     }
 
-    @PostMapping("/spaces/{id}/add-availability")
+    @PostMapping("/{id}/add-availability")
     public ResponseEntity<Object> addAvailability(
             @PathVariable Long id,
             @RequestParam LocalDate startDate,
@@ -81,13 +82,13 @@ public class SpaceController {
             return new ResponseEntity<>("Access denied.", HttpStatus.UNAUTHORIZED);
         }
     }
-    @GetMapping("/spaces/all")
+    @GetMapping("/all")
     public ResponseEntity<Object> viewAll(){
         List<Space> allSpaces = spaceService.getAll();
         List<SpaceDTO> allSpacesDTO = allSpaces.stream().map(space -> mapper.spaceToDTO(space)).toList();
         return new ResponseEntity<>(allSpacesDTO, HttpStatus.OK);
     }
-    @GetMapping("/spaces/find")
+    @GetMapping("/find")
     public ResponseEntity<Object> findAvailable(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate){

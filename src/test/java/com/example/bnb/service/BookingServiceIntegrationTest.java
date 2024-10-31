@@ -19,7 +19,7 @@ import java.security.InvalidParameterException;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.example.bnb.model.BookingStatus.PENDING;
+import static com.example.bnb.model.BookingStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
@@ -156,7 +156,7 @@ class BookingServiceIntegrationTest {
         assertNotNull(booking);
         assertEquals(PENDING, booking.get(0).getBookingStatus());
 
-        bookingService.approveBookings(spaceId, userEmail, bookingsIds);
+        bookingService.approveBookings(spaceId, bookingsIds);
         assertEquals(BookingStatus.APPROVED, booking.get(0).getBookingStatus());
     }
     @Test
@@ -169,7 +169,7 @@ class BookingServiceIntegrationTest {
         assertEquals(PENDING, booking.get(0).getBookingStatus());
         assertEquals(PENDING, booking.get(1).getBookingStatus());
 
-        bookingService.approveBookings(spaceId, userEmail, bookingsIds);
+        bookingService.approveBookings(spaceId, bookingsIds);
         assertEquals(BookingStatus.APPROVED, booking.get(0).getBookingStatus());
         assertEquals(BookingStatus.APPROVED, booking.get(1).getBookingStatus());
     }
@@ -183,7 +183,7 @@ class BookingServiceIntegrationTest {
         assertEquals(PENDING, booking.get(0).getBookingStatus());
         assertEquals(PENDING, booking.get(1).getBookingStatus());
 
-        bookingService.approveBookings(spaceId, userEmail, List.of(bookingsIds.get(0)));
+        bookingService.approveBookings(spaceId, List.of(bookingsIds.get(0)));
         assertEquals(BookingStatus.APPROVED, booking.get(0).getBookingStatus());
         assertEquals(PENDING, booking.get(1).getBookingStatus());
     }
@@ -200,7 +200,7 @@ class BookingServiceIntegrationTest {
         assertEquals(PENDING, booking.get(1).getBookingStatus());
         spaceAvailabilityService.setUnavailable(spaceId, List.of(LocalDate.of(2025, 5, 1)));
 
-        CannotCreateTransactionException e = assertThrows(CannotCreateTransactionException.class, () -> bookingService.approveBookings(spaceId, userEmail, bookingsIds));
+        CannotCreateTransactionException e = assertThrows(CannotCreateTransactionException.class, () -> bookingService.approveBookings(spaceId, bookingsIds));
         assertEquals("Unable to approve the request - space is not available in selected dates.", e.getMessage());
     }
     @Test
@@ -214,7 +214,7 @@ class BookingServiceIntegrationTest {
         assertEquals(PENDING, booking.get(1).getBookingStatus());
         spaceAvailabilityService.setUnavailable(spaceId, List.of(LocalDate.of(2025, 5, 1)));
 
-        CannotCreateTransactionException e = assertThrows(CannotCreateTransactionException.class, () -> bookingService.approveBookings(spaceId, userEmail, bookingsIds));
+        CannotCreateTransactionException e = assertThrows(CannotCreateTransactionException.class, () -> bookingService.approveBookings(spaceId, bookingsIds));
         assertEquals("Unable to approve the request - space is not available in selected dates.", e.getMessage());
     }
     @Test
@@ -228,7 +228,80 @@ class BookingServiceIntegrationTest {
         assertEquals(PENDING, booking.get(1).getBookingStatus());
         spaceAvailabilityService.setUnavailable(spaceId, List.of(LocalDate.of(2025, 5, 1)));
 
-        CannotCreateTransactionException e = assertThrows(CannotCreateTransactionException.class, () -> bookingService.approveBookings(spaceId, userEmail, bookingsIds));
+        CannotCreateTransactionException e = assertThrows(CannotCreateTransactionException.class, () -> bookingService.approveBookings(spaceId, bookingsIds));
         assertEquals("Unable to approve the request - space is not available in selected dates.", e.getMessage());
     }
+    @Test
+    void deniesBookings() {
+        Long spaceId = space.getId();
+        String userEmail = user.getEmail();
+        var booking = bookingService.createBooking(spaceId, userEmail, List.of(LocalDate.of(2025, 5, 1)));
+        var bookingsIds = booking.stream().map(Booking::getId).toList();
+        assertNotNull(booking);
+        assertEquals(PENDING, booking.get(0).getBookingStatus());
+
+        bookingService.denyBookings(bookingsIds);
+        assertEquals(BookingStatus.DENIED, booking.get(0).getBookingStatus());
+    }
+    @Test
+    void deniesBookings2() {
+        Long spaceId = space.getId();
+        String userEmail = user.getEmail();
+        var booking = bookingService.createBooking(spaceId, userEmail, List.of(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 2)));
+        var bookingsIds = booking.stream().map(Booking::getId).toList();
+        assertNotNull(booking);
+        assertEquals(PENDING, booking.get(0).getBookingStatus());
+        assertEquals(PENDING, booking.get(1).getBookingStatus());
+
+        bookingService.denyBookings(bookingsIds);
+        assertEquals(BookingStatus.DENIED, booking.get(0).getBookingStatus());
+        assertEquals(BookingStatus.DENIED, booking.get(1).getBookingStatus());
+    }
+    @Test
+    void deniesOneBookingFromTwo() {
+        Long spaceId = space.getId();
+        String userEmail = user.getEmail();
+        var booking = bookingService.createBooking(spaceId, userEmail, List.of(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 2)));
+        var bookingsIds = booking.stream().map(Booking::getId).toList();
+        assertNotNull(booking);
+        assertEquals(PENDING, booking.get(0).getBookingStatus());
+        assertEquals(PENDING, booking.get(1).getBookingStatus());
+
+        bookingService.denyBookings(List.of(bookingsIds.get(0)));
+        assertEquals(BookingStatus.DENIED, booking.get(0).getBookingStatus());
+        assertEquals(PENDING, booking.get(1).getBookingStatus());
+    }
+    @Test
+    void throwsExceptionIfDenyingApprovedBooking() {
+        Long spaceId = space.getId();
+        String userEmail = user.getEmail();
+        var booking = bookingService.createBooking(spaceId, userEmail, List.of(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 2)));
+        booking.get(0).setBookingStatus(APPROVED);
+        bookingRepository.save(booking.get(0));
+
+        var bookingsIds = booking.stream().map(Booking::getId).toList();
+        assertNotNull(booking);
+        assertEquals(APPROVED, booking.get(0).getBookingStatus());
+        assertEquals(PENDING, booking.get(1).getBookingStatus());
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> bookingService.denyBookings(bookingsIds));
+        assertEquals("Unable to change the status from APPROVED", e.getMessage());
+    }
+    @Test
+    void throwsExceptionIfApprovingDeniedBooking() {
+        Long spaceId = space.getId();
+        String userEmail = user.getEmail();
+        var booking = bookingService.createBooking(spaceId, userEmail, List.of(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 2)));
+        booking.get(0).setBookingStatus(DENIED);
+        bookingRepository.save(booking.get(0));
+
+        var bookingsIds = booking.stream().map(Booking::getId).toList();
+        assertNotNull(booking);
+        assertEquals(DENIED, booking.get(0).getBookingStatus());
+        assertEquals(PENDING, booking.get(1).getBookingStatus());
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> bookingService.approveBookings(spaceId, bookingsIds));
+        assertEquals("Unable to change the status from DENIED", e.getMessage());
+    }
+
 }

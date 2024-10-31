@@ -40,5 +40,11 @@ public class Booking {
         this.user = user;
         this.date = date;
     }
-
+    public void setBookingStatus(BookingStatus bookingStatus) {
+        if (this.bookingStatus == BookingStatus.PENDING) {
+            this.bookingStatus = bookingStatus;
+        } else {
+            throw new IllegalStateException("Unable to change the status from " + this.bookingStatus);
+        }
+    }
 }

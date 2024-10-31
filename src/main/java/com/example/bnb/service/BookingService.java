@@ -5,7 +5,6 @@ import com.example.bnb.model.BookingStatus;
 import com.example.bnb.model.Space;
 import com.example.bnb.model.User;
 import com.example.bnb.repository.BookingRepository;
-import com.example.bnb.repository.SpaceAvailabilityRepository;
 import com.example.bnb.repository.SpaceRepository;
 import com.example.bnb.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -67,9 +66,28 @@ public class BookingService {
     }
 
     @Transactional
-    public void approveBookings(Long spaceId, String userEmail, List<Long> bookingsIds){
+    public void approveBookings(Long spaceId, List<Long> bookingsIds){
 
         List<Booking> bookingsToApprove = bookingRepository.findAllById(bookingsIds);
+
+        if (bookingsToApprove.isEmpty()) {
+            throw new EntityNotFoundException("No bookings found for the provided IDs.");
+        }
+
+        Long firstUserId = bookingsToApprove.get(0).getUser().getId();
+        Long firstSpaceId = bookingsToApprove.get(0).getSpace().getId();
+
+        boolean isTheSameUser = bookingsToApprove.stream()
+                .allMatch(booking -> booking.getUser().getId().equals(firstUserId));
+        boolean isTheSameSpace = bookingsToApprove.stream()
+                .allMatch(booking -> booking.getSpace().getId().equals(firstSpaceId));
+
+        if (!isTheSameUser) {
+            throw new IllegalArgumentException("All bookings must belong to the same user!");
+        }
+        if (!isTheSameSpace){
+            throw new IllegalArgumentException("All bookings must refer to the same space!");
+        }
         List<LocalDate> datesToApprove = bookingsToApprove.stream()
                 .map(Booking::getDate)
                 .distinct()
@@ -78,14 +96,47 @@ public class BookingService {
         if (!spaceAvailabilityService.isSpaceAvailableInDates(spaceId, datesToApprove)){
             throw new CannotCreateTransactionException("Unable to approve the request - space is not available in selected dates.");
         }
-
-        Long userId = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new EntityNotFoundException("User doesn't exist!")).getId();
-
         for (Booking booking : bookingsToApprove){
             booking.setBookingStatus(BookingStatus.APPROVED);
         }
         bookingRepository.saveAll(bookingsToApprove);
         spaceAvailabilityService.setUnavailable(spaceId, datesToApprove);
+    }
+
+    @Transactional
+    public void denyBookings(List<Long> bookingsIds){
+
+        List<Booking> bookingsToDeny = bookingRepository.findAllById(bookingsIds);
+
+        if (bookingsToDeny.isEmpty()) {
+            throw new EntityNotFoundException("No bookings found for the provided IDs.");
+        }
+
+        Long firstUserId = bookingsToDeny.get(0).getUser().getId();
+        Long firstSpaceId = bookingsToDeny.get(0).getSpace().getId();
+
+        boolean isTheSameUser = bookingsToDeny.stream()
+                .allMatch(booking -> booking.getUser().getId().equals(firstUserId));
+        boolean isTheSameSpace = bookingsToDeny.stream()
+                .allMatch(booking -> booking.getSpace().getId().equals(firstSpaceId));
+
+        if (!isTheSameUser) {
+            throw new IllegalArgumentException("All bookings must belong to the same user!");
+        }
+        if (!isTheSameSpace) {
+            throw new IllegalArgumentException("All bookings must refer to the same space!");
+        }
+        List<LocalDate> datesToDeny = bookingsToDeny.stream()
+                .map(Booking::getDate)
+                .distinct()
+                .toList();
+
+        if (!spaceAvailabilityService.isSpaceAvailableInDates(firstSpaceId, datesToDeny)){
+            throw new CannotCreateTransactionException("Unable to process the request - space is not available in selected dates.");
+        }
+        for (Booking booking : bookingsToDeny) {
+            booking.setBookingStatus(BookingStatus.DENIED);
+        }
+        bookingRepository.saveAll(bookingsToDeny);
     }
 }
