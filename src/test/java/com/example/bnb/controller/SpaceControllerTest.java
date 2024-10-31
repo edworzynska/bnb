@@ -1,7 +1,9 @@
 package com.example.bnb.controller;
 
 import com.example.bnb.model.Space;
+import com.example.bnb.model.SpaceAvailability;
 import com.example.bnb.model.User;
+import com.example.bnb.repository.SpaceAvailabilityRepository;
 import com.example.bnb.repository.SpaceRepository;
 import com.example.bnb.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,10 +48,17 @@ class SpaceControllerTest {
     private SpaceRepository spaceRepository;
 
     @Autowired
+    private SpaceAvailabilityRepository spaceAvailabilityRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private User user;
     private User user2;
+    private Space testSpace1;
+    private Space testSpace2;
+    private SpaceAvailability testSpaceAvailability1;
+    private SpaceAvailability testSpaceAvailability2;
 
     @BeforeEach
     void setUp() {
@@ -64,6 +73,30 @@ class SpaceControllerTest {
         user2.setEmail("newuser@users.com");
         user2.setPassword(passwordEncoder.encode("newpassword1!"));
         userRepository.save(user2);
+
+//        testSpace1 = new Space();
+//        testSpace1.setUser(user);
+//        testSpace1.setDescription("test description 1");
+//        testSpace1.setPricePerNight(new BigDecimal("70"));
+//        spaceRepository.save(testSpace1);
+//
+//        testSpace2 = new Space();
+//        testSpace2.setUser(user2);
+//        testSpace2.setDescription("test description 2");
+//        testSpace2.setPricePerNight(new BigDecimal("130"));
+//        spaceRepository.save(testSpace2);
+//
+//        testSpaceAvailability1 = new SpaceAvailability();
+//        testSpaceAvailability1.setSpace(testSpace1);
+//        testSpaceAvailability1.setDate(LocalDate.of(2025, 12, 12));
+//        spaceAvailabilityRepository.save(testSpaceAvailability1);
+//
+//        testSpaceAvailability2 = new SpaceAvailability();
+//        testSpaceAvailability2.setSpace(testSpace1);
+//        testSpaceAvailability2.setDate(LocalDate.of(2025, 12, 13));
+//        spaceAvailabilityRepository.save(testSpaceAvailability2);
+//
+
     }
 
     @Test
@@ -277,6 +310,129 @@ class SpaceControllerTest {
         mockMvc.perform(post("/spaces/{id}/add-availability", id)
                         .param("startDate", "08/1/24")
                         .param("endDate", "08/10/24"))
+                .andExpect(status().is4xxClientError())
+                .andExpect(content().string("Please select valid dates!"));
+    }
+
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void throwsEntityNotFoundExceptionIfNoSpacesOnTheList() throws Exception {
+        spaceRepository.deleteAll();
+        mockMvc.perform(get("/spaces/all"))
+                .andExpect(status().is4xxClientError())
+                .andExpect(content().string("Spaces not found!"));
+    }
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void returnsListOfAllSpacesDTOIfUsersLogged() throws Exception {
+        Space space = new Space(user, "Test", new BigDecimal("70"));
+        Space space2 = new Space(user, "Test 2", new BigDecimal("80"));
+        spaceRepository.save(space);
+        spaceRepository.save(space2);
+        mockMvc.perform(get("/spaces/all"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json"));
+    }
+    @Test
+    @WithAnonymousUser
+    void redirectsUserIfViewingSpacesAsAnonymous() throws Exception {
+        Space space = new Space(user, "Test", new BigDecimal("70"));
+        Space space2 = new Space(user, "Test 2", new BigDecimal("80"));
+        spaceRepository.save(space);
+        spaceRepository.save(space2);
+        mockMvc.perform(get("/spaces/all"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(content().string(""));
+    }
+
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void findsAllAvailableSpacesAsLoggedUser() throws Exception{
+        Space space = new Space(user, "Test", new BigDecimal("70"));
+        spaceRepository.save(space);
+        Long id = space.getId();
+
+        mockMvc.perform(post("/spaces/{id}/add-availability", id)
+                .param("startDate", "12/1/24")
+                .param("endDate", "12/10/24"));
+
+        mockMvc.perform(get("/spaces/find"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json"));
+    }
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void findsAllAvailableSpacesInTimeRangeAsLoggedUser() throws Exception{
+        Space space = new Space(user, "Test", new BigDecimal("70"));
+        spaceRepository.save(space);
+        Long id = space.getId();
+
+        mockMvc.perform(post("/spaces/{id}/add-availability", id)
+                .param("startDate", "12/01/24")
+                .param("endDate", "12/10/24"));
+
+        Space space2 = new Space(user, "Test 2", new BigDecimal("90"));
+        spaceRepository.save(space2);
+        Long id2 = space2.getId();
+
+        mockMvc.perform(post("/spaces/{id2}/add-availability", id2)
+                .param("startDate", "11/30/24")
+                .param("endDate", "12/05/24"));
+
+        mockMvc.perform(get("/spaces/find")
+                        .param("startDate", "12/01/24")
+                        .param("endDate", "12/04/24"))
+                .andExpect(status().isFound())
+                .andExpect(content().contentType("application/json"));
+    }
+
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void returnsErrorMessageIfNoSpacesInTheRangeAreAvailable() throws Exception {
+        Space space = new Space(user, "Test", new BigDecimal("70"));
+        spaceRepository.save(space);
+        Long id = space.getId();
+
+        mockMvc.perform(post("/spaces/{id}/add-availability", id)
+                .param("startDate", "12/01/24")
+                .param("endDate", "12/10/24"));
+
+        Space space2 = new Space(user, "Test 2", new BigDecimal("90"));
+        spaceRepository.save(space2);
+        Long id2 = space2.getId();
+
+        mockMvc.perform(post("/spaces/{id2}/add-availability", id2)
+                .param("startDate", "11/30/24")
+                .param("endDate", "12/05/24"));
+
+        mockMvc.perform(get("/spaces/find")
+                        .param("startDate", "01/01/25")
+                        .param("endDate", "02/01/25"))
+                .andExpect(status().isConflict())
+                .andExpect(content().string("No available spaces found in the selected date range!"));
+    }
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void returnsErrorMessageIfDatesAreInThePast() throws Exception {
+        Space space = new Space(user, "Test", new BigDecimal("70"));
+        spaceRepository.save(space);
+        Long id = space.getId();
+
+        mockMvc.perform(post("/spaces/{id}/add-availability", id)
+                .param("startDate", "12/01/24")
+                .param("endDate", "12/10/24"));
+
+        Space space2 = new Space(user, "Test 2", new BigDecimal("90"));
+        spaceRepository.save(space2);
+        Long id2 = space2.getId();
+
+        mockMvc.perform(post("/spaces/{id2}/add-availability", id2)
+                .param("startDate", "11/30/24")
+                .param("endDate", "12/05/24"));
+
+        mockMvc.perform(get("/spaces/find")
+                        .param("startDate", "01/01/24")
+                        .param("endDate", "02/01/24"))
                 .andExpect(status().is4xxClientError())
                 .andExpect(content().string("Please select valid dates!"));
     }

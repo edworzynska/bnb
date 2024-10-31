@@ -1,7 +1,11 @@
 package com.example.bnb.dto;
 
+import com.example.bnb.model.BookingStatus;
 import com.example.bnb.model.Space;
+import com.example.bnb.model.SpaceAvailability;
 import com.example.bnb.model.User;
+import com.example.bnb.repository.BookingRepository;
+import com.example.bnb.repository.SpaceAvailabilityRepository;
 import com.example.bnb.repository.SpaceRepository;
 import com.example.bnb.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,8 +27,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class MapperTest {
 
     private SpaceDTO spaceDTO;
-    private Space space;
-    private User user;
+    private Space spaceMapper;
+    private User userMapper;
 
     @Autowired
     private Mapper mapper;
@@ -33,39 +39,67 @@ class MapperTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private SpaceAvailabilityRepository spaceAvailabilityRepository;
+
+
     @BeforeEach
     void setUp() {
-        user = new User();
-        user.setName("Test Name");
-        user.setEmail("test@email.com");
-        user.setPassword("TestPassword!@");
-        userRepository.save(user);
+        userMapper = new User();
+        userMapper.setName("Test Name in Mapper");
+        userMapper.setEmail("test@mapper.com");
+        userMapper.setPassword("TestPassword!@");
+        userRepository.save(userMapper);
 
-        space = new Space();
-        space.setUser(user);
-        space.setDescription("Short description");
-        space.setPricePerNight(new BigDecimal("17"));
-        spaceRepository.save(space);
+        spaceMapper = new Space();
+        spaceMapper.setUser(userMapper);
+        spaceMapper.setDescription("Short description in Mapper Class");
+        spaceMapper.setPricePerNight(new BigDecimal("17"));
+        spaceRepository.save(spaceMapper);
     }
 
     @Test
     void transfersSpaceToDTO() {
-        spaceDTO = mapper.spaceToDTO(space);
+        spaceDTO = mapper.spaceToDTO(spaceMapper);
         assertNotNull(spaceDTO);
-        assertEquals(space.getId(), spaceDTO.getSpaceId());
-        assertEquals(space.getDescription(), spaceDTO.getDescription());
-        assertEquals(space.getUser().getName(), spaceDTO.getOwnerName());
+        assertEquals(spaceMapper.getId(), spaceDTO.getSpaceId());
+        assertEquals(spaceMapper.getDescription(), spaceDTO.getDescription());
+        assertEquals(spaceMapper.getUser().getName(), spaceDTO.getOwnerName());
     }
 
     @Test
     void transfersSpaceDTOtoSpace() {
-        spaceDTO = mapper.spaceToDTO(space);
+        spaceDTO = mapper.spaceToDTO(spaceMapper);
         Space space2 = mapper.dtoToSpace(spaceDTO);
 
         assertNotNull(space2);
-        assertEquals(space.getId(), space2.getId());
-        assertEquals(space.getDescription(), space2.getDescription());
-        assertEquals(space.getPricePerNight(), space2.getPricePerNight());
-        assertEquals(space, space2);
+        assertEquals(spaceMapper.getId(), space2.getId());
+        assertEquals(spaceMapper.getDescription(), space2.getDescription());
+        assertEquals(spaceMapper.getPricePerNight(), space2.getPricePerNight());
+        assertEquals(spaceMapper, space2);
+    }
+
+    @Test
+    void transfersSpaceWithAvailabilitySetToDTO() {
+        List<LocalDate> dateRange = LocalDate.of(2024, 12, 1).datesUntil(LocalDate.of(2024, 12, 10)).toList();
+        for (LocalDate date : dateRange){
+            SpaceAvailability spaceAvailability = new SpaceAvailability();
+            spaceAvailability.setSpace(spaceMapper);
+            spaceAvailability.setDate(date);
+            spaceAvailability.setIsAvailable(true);
+            spaceMapper.getSpaceAvailabilities().add(spaceAvailability);
+            spaceAvailabilityRepository.save(spaceAvailability);
+        }
+        spaceDTO = mapper.spaceToDTO(spaceMapper);
+
+        assertNotNull(spaceDTO);
+        assertEquals(spaceMapper.getId(), spaceDTO.getSpaceId());
+        assertEquals(spaceMapper.getDescription(), spaceDTO.getDescription());
+        for (LocalDate date : dateRange){
+            assertEquals(true, spaceDTO.getAvailableDates().get(date));
+        }
     }
 }

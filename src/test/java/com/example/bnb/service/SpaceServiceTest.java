@@ -48,6 +48,8 @@ class SpaceServiceTest {
 
     private User mockedUser;
     private Space mockedSpace;
+    private Space mockedSpace2;
+
 
     @BeforeEach
     void setUp() {
@@ -60,6 +62,12 @@ class SpaceServiceTest {
         mockedSpace.setUser(mockedUser);
         mockedSpace.setPricePerNight(new BigDecimal("15"));
         mockedSpace.setDescription("Test description");
+
+        mockedSpace2 = new Space();
+        mockedSpace2.setId(2L);
+        mockedSpace2.setUser(mockedUser);
+        mockedSpace2.setPricePerNight(new BigDecimal("20"));
+        mockedSpace2.setDescription("Test description 2");
 
         MockitoAnnotations.openMocks(this);
     }
@@ -163,5 +171,48 @@ class SpaceServiceTest {
         InvalidParameterException e = assertThrows(InvalidParameterException.class, () -> spaceService.addAvailability(1L, dates));
         assertEquals("Please select dates!", e.getMessage());
         verify(spaceAvailabilityRepository, never()).save(any(SpaceAvailability.class));
+    }
+
+    @Test
+    void throwsEntityNotFoundExceptionIfListOfAllSpacesIsEmpty() {
+        when(spaceRepository.findAll()).thenReturn(List.of());
+        EntityNotFoundException e = assertThrows(EntityNotFoundException.class, () -> spaceService.getAll());
+        assertEquals("Spaces not found!", e.getMessage());
+    }
+
+    @Test
+    void returnsListOfAllSpaces() {
+        when(spaceRepository.findAll()).thenReturn(List.of(mockedSpace, mockedSpace2));
+        List<Space> result = spaceService.getAll();
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(mockedSpace.getDescription(), result.get(0).getDescription());
+        assertEquals(mockedSpace2.getDescription(), result.get(1).getDescription());
+    }
+
+    @Test
+    void returnsListOfAvailableSpaces() {
+
+        when(spaceRepository.findAllAvailableSpaces()).thenReturn(List.of(mockedSpace, mockedSpace2));
+        var result = spaceService.findAvailable();
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertTrue(result.contains(mockedSpace));
+    }
+
+    @Test
+    void throwsErrorIfThereAreNoAvailableSpaces() {
+        Space mockedSpace = mock(Space.class);
+        Space mockedSpace2 = mock(Space.class);
+        SpaceAvailability mockedSpaceAvailability1 = mock(SpaceAvailability.class);
+        SpaceAvailability mockedSpaceAvailability2 = mock(SpaceAvailability.class);
+        when(mockedSpaceAvailability1.getIsAvailable()).thenReturn(false);
+        when(mockedSpaceAvailability2.getIsAvailable()).thenReturn(false);
+        when(mockedSpace.getSpaceAvailabilities()).thenReturn(List.of());
+        when(mockedSpace2.getSpaceAvailabilities()).thenReturn(List.of());
+        when(spaceRepository.findAll()).thenReturn(List.of(mockedSpace, mockedSpace2));
+        EntityNotFoundException e = assertThrows(EntityNotFoundException.class,()-> spaceService.findAvailable());
+        assertEquals("No available spaces found!", e.getMessage());
     }
 }

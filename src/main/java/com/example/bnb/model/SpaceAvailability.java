@@ -30,4 +30,5 @@ public class SpaceAvailability {
         this.space = space;
         this.id = id;
     }
+
 }

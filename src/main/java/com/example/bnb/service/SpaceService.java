@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.security.InvalidParameterException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -69,5 +70,30 @@ public class SpaceService {
             space.getSpaceAvailabilities().add(spaceAvailability);
             spaceAvailabilityRepository.save(spaceAvailability);
         }
+    }
+    public List<Space> getAll(){
+        List<Space> allSpaces = spaceRepository.findAll();
+        if (allSpaces.isEmpty()){
+            throw new EntityNotFoundException("Spaces not found!");
+        }
+        return allSpaces;
+    }
+
+    public List<Space> findAvailable(){
+        List<Space> availableSpaces = spaceRepository.findAllAvailableSpaces();
+
+        if (availableSpaces.isEmpty()){
+            throw new EntityNotFoundException("No available spaces found!");
+        }
+        return availableSpaces;
+    }
+    public List<Space> findAvailable(List<LocalDate> dates) {
+        long dateCount = dates.size();
+        List<Space> availableSpaces = spaceRepository.findSpacesWithAvailableDates(dates, dateCount);
+
+        if (availableSpaces.isEmpty()) {
+            throw new EntityNotFoundException("No available spaces found in the selected date range!");
+        }
+        return availableSpaces;
     }
 }

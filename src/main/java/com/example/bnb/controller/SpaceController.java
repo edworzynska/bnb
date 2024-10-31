@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -78,6 +79,33 @@ public class SpaceController {
         }
         else {
             return new ResponseEntity<>("Access denied.", HttpStatus.UNAUTHORIZED);
+        }
+    }
+    @GetMapping("/spaces/all")
+    public ResponseEntity<Object> viewAll(){
+        List<Space> allSpaces = spaceService.getAll();
+        List<SpaceDTO> allSpacesDTO = allSpaces.stream().map(space -> mapper.spaceToDTO(space)).toList();
+        return new ResponseEntity<>(allSpacesDTO, HttpStatus.OK);
+    }
+    @GetMapping("/spaces/find")
+    public ResponseEntity<Object> findAvailable(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate){
+        if (startDate == null && endDate == null){
+            List <SpaceDTO> availableSpacesDTO = spaceService.findAvailable()
+                    .stream()
+                    .map(space -> mapper.spaceToDTO(space)).toList();
+            return new ResponseEntity<>(availableSpacesDTO, HttpStatus.OK);
+        }
+
+        else if (startDate.isBefore(LocalDate.now()) || endDate.isBefore(LocalDate.now())){
+            return new ResponseEntity<>("Please select valid dates!", HttpStatus.BAD_REQUEST);
+        }
+        else {
+            List<LocalDate> dates = startDate.datesUntil(endDate).toList();
+            List<SpaceDTO> availableSpacesDTO = spaceService.findAvailable(dates).stream()
+                    .map(space -> mapper.spaceToDTO(space)).toList();
+            return new ResponseEntity<>(availableSpacesDTO, HttpStatus.FOUND);
         }
     }
 }
