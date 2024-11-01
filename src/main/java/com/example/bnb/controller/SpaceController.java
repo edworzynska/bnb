@@ -80,6 +80,7 @@ public class SpaceController {
 
         if (loggedUser.equals(spaceOwner)){
             spaceService.addAvailability(id, dates);
+            emailService.spaceUpdateEmail(loggedUser, spaceService.getSpace(id).getUser().getName());
             return new ResponseEntity<>("Availability added successfully!", HttpStatus.CREATED);
         }
         else {

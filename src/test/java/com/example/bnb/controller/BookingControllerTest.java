@@ -1,5 +1,6 @@
 package com.example.bnb.controller;
 
+import com.example.bnb.configuration.EmailService;
 import com.example.bnb.model.Booking;
 import com.example.bnb.model.Space;
 import com.example.bnb.model.SpaceAvailability;
@@ -44,6 +45,9 @@ class BookingControllerTest {
     private SpaceController spaceController;
 
     @Autowired
+    private EmailService emailService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -80,13 +84,13 @@ class BookingControllerTest {
 
         userBooking = new User();
         userBooking.setName("Test User");
-        userBooking.setEmail("test@email.com");
+        userBooking.setEmail("bnb.test.address@gmail.com");
         userBooking.setPassword(passwordEncoder.encode("testpassword1!"));
         userRepository.save(userBooking);
 
         userBooking2 = new User();
         userBooking2.setName("New User");
-        userBooking2.setEmail("newuser@users.com");
+        userBooking2.setEmail("bnbtestaddress@gmail.com");
         userBooking2.setPassword(passwordEncoder.encode("newpassword1!"));
         userRepository.save(userBooking2);
 
@@ -120,7 +124,7 @@ class BookingControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnb.test.address@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorWhileCreatingNewBookingAsOwner() throws Exception {
         Long id = testSpaceBooking1.getId();
         mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
@@ -130,7 +134,7 @@ class BookingControllerTest {
                 .andExpect(content().string("Unable to request a booking in owned space!"));
     }
     @Test
-    @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void createsNewBookingAsLoggedUser() throws Exception {
         Long id = testSpaceBooking1.getId();
         mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
@@ -150,7 +154,7 @@ class BookingControllerTest {
                 .andExpect(status().is3xxRedirection());
     }
     @Test
-    @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorWhileCreatingNewBookingWithDatesInThePast() throws Exception {
         Long id = testSpaceBooking1.getId();
         mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
@@ -160,7 +164,7 @@ class BookingControllerTest {
                 .andExpect(content().string("Please select valid dates!"));
     }
     @Test
-    @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorWhileCreatingNewBookingWithUnavailableDates() throws Exception {
         Long id = testSpaceBooking1.getId();
         mockMvc.perform(post("/booking/spaces/{id}/request-booking", id)
@@ -170,7 +174,7 @@ class BookingControllerTest {
                 .andExpect(content().string("Unable to create booking: space is not available in requested dates."));
     }
     @Test
-    @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorWhileCreatingNewBookingWithBookedDates() throws Exception {
         Long id = testSpaceBooking1.getId();
         spaceAvailabilityService.setUnavailable(id, List.of(LocalDate.of(2025, 5, 1)));
@@ -181,7 +185,7 @@ class BookingControllerTest {
                 .andExpect(content().string("Unable to create booking: space is not available in requested dates."));
     }
     @Test
-    @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorWhileCreatingNewBookingWithBookedDates2() throws Exception {
         Long id = testSpaceBooking1.getId();
         spaceAvailabilityService.setUnavailable(id, List.of(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 2)));
@@ -193,7 +197,7 @@ class BookingControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnb.test.address@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsMessageAndDeniesIfSpaceOwnerApprovesBookingInUnavailableDates() throws Exception {
         Booking booking = new Booking(testSpaceBooking1, userBooking, LocalDate.of(2025,10,1));
         Booking booking1 = new Booking(testSpaceBooking1, userBooking, LocalDate.of(2025,10,2));
@@ -210,7 +214,7 @@ class BookingControllerTest {
                 .andExpect(content().string("Unable to approve the request - space is not available in selected dates."));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnb.test.address@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void spaceOwnerApprovesBooking() throws Exception {
         Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
         Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
@@ -227,7 +231,7 @@ class BookingControllerTest {
                 .andExpect(content().string("Bookings approved successfully!"));
     }
     @Test
-    @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void differentUserApprovesBooking() throws Exception {
         Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
         Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
@@ -261,7 +265,7 @@ class BookingControllerTest {
                 .andExpect(status().is3xxRedirection());
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnb.test.address@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsMessageAndDeniesIfSpaceOwnerDeniesBookingInUnavailableDates() throws Exception {
         Booking booking = new Booking(testSpaceBooking1, userBooking, LocalDate.of(2025,10,1));
         Booking booking1 = new Booking(testSpaceBooking1, userBooking, LocalDate.of(2025,10,2));
@@ -278,7 +282,7 @@ class BookingControllerTest {
                 .andExpect(content().string("Unable to process the request - space is not available in selected dates."));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnb.test.address@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void spaceOwnerDeniesBooking() throws Exception {
         Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
         Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
@@ -295,7 +299,7 @@ class BookingControllerTest {
                 .andExpect(content().string("Bookings denied successfully!"));
     }
     @Test
-    @WithUserDetails(value = "newuser@users.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void differentUserDeniesBooking() throws Exception {
         Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
         Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
@@ -329,7 +333,7 @@ class BookingControllerTest {
                 .andExpect(status().is3xxRedirection());
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnb.test.address@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void spaceOwnerApprovesBookingOfDifferentSpace() throws Exception {
         Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
         Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
@@ -346,7 +350,7 @@ class BookingControllerTest {
                 .andExpect(content().string("Unable to process; one or more bookings aren't assigned to the space!"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnb.test.address@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void spaceOwnerDeniesBookingOfDifferentSpace() throws Exception {
         Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
         Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);

@@ -1,5 +1,6 @@
 package com.example.bnb.service;
 
+import com.example.bnb.configuration.EmailService;
 import com.example.bnb.model.Booking;
 import com.example.bnb.model.BookingStatus;
 import com.example.bnb.model.Space;
@@ -20,6 +21,9 @@ import java.util.List;
 
 @Service
 public class BookingService {
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -89,8 +93,10 @@ public class BookingService {
         for (Booking booking : bookingsToApprove){
             booking.setBookingStatus(BookingStatus.APPROVED);
         }
+
         bookingRepository.saveAll(bookingsToApprove);
         spaceAvailabilityService.setUnavailable(spaceId, datesToApprove);
+
     }
 
     @Transactional

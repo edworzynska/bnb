@@ -1,5 +1,6 @@
 package com.example.bnb.controller;
 
+import com.example.bnb.configuration.EmailService;
 import com.example.bnb.model.Space;
 import com.example.bnb.model.SpaceAvailability;
 import com.example.bnb.model.User;
@@ -39,6 +40,9 @@ class SpaceControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private EmailService emailService;
+
+    @Autowired
     private SpaceController spaceController;
 
     @Autowired
@@ -64,19 +68,19 @@ class SpaceControllerTest {
     void setUp() {
         user = new User();
         user.setName("Test User");
-        user.setEmail("test@email.com");
+        user.setEmail("bnbtestaddress@gmail.com");
         user.setPassword(passwordEncoder.encode("testpassword1!"));
         userRepository.save(user);
 
         user2 = new User();
         user2.setName("New User");
-        user2.setEmail("newuser@users.com");
+        user2.setEmail("bnb.test.address@gmail.com");
         user2.setPassword(passwordEncoder.encode("newpassword1!"));
         userRepository.save(user2);
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void addsSpaceWithLoggedUser() throws Exception {
         mockMvc.perform(post("/spaces/add-space")
                 .param("description", "Test Description")
@@ -96,7 +100,7 @@ class SpaceControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsInvalidParameterExceptionIfDescriptionIsEmpty() throws Exception {
         mockMvc.perform(post("/spaces/add-space")
                         .param("description", "")
@@ -105,7 +109,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Description cannot be empty!"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsInvalidParameterExceptionIfDescriptionIsBlank() throws Exception {
         mockMvc.perform(post("/spaces/add-space")
                         .param("description", "      ")
@@ -114,7 +118,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Description cannot be empty!"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsInvalidParameterExceptionIfPriceIsNegative() throws Exception {
         mockMvc.perform(post("/spaces/add-space")
                         .param("description", "Content")
@@ -123,7 +127,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Price has to be a positive number!"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsInvalidParameterExceptionIfPriceIsZero() throws Exception {
         mockMvc.perform(post("/spaces/add-space")
                         .param("description", "Content")
@@ -132,7 +136,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Price has to be a positive number!"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsMissingParameterExceptionIfPriceIsEmpty() throws Exception {
         mockMvc.perform(post("/spaces/add-space")
                         .param("description", "Content")
@@ -141,7 +145,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Missing parameter: price"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsMissingParameterExceptionIfDescriptionParameterIsMissing() throws Exception {
         mockMvc.perform(post("/spaces/add-space")
                         .param("price", "20"))
@@ -150,7 +154,7 @@ class SpaceControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void viewsSpaceAsLoggedUser() throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -174,7 +178,7 @@ class SpaceControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsExceptionIfSpaceDoesntExistWhileViewing() throws Exception{
         mockMvc.perform(get("/spaces/1000"))
                 .andExpect(status().is4xxClientError())
@@ -182,7 +186,7 @@ class SpaceControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void addsAvailabilityToSpaceOwnedByUser() throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -197,7 +201,7 @@ class SpaceControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void loggedUserIsNotTheOwnerOfTheSpaceReturnsAccessDeniedMessage() throws Exception {
         Space space2 = new Space(user2, "Test", new BigDecimal(40));
         spaceRepository.save(space2);
@@ -223,7 +227,7 @@ class SpaceControllerTest {
                 .andExpect(status().is3xxRedirection());
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsExceptionIfEndDateIsMissing () throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -236,7 +240,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Missing parameter: endDate"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsExceptionIfStartDateIsMissing () throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -248,7 +252,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Missing parameter: startDate"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsMessageIfStartDateIsInThePast() throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -262,7 +266,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Please select valid dates!"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsMessageIfEndDateIsInThePast() throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -276,7 +280,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Please select valid dates!"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsMessageIfBothDatesAreInThePast() throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -291,7 +295,7 @@ class SpaceControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void throwsEntityNotFoundExceptionIfNoSpacesOnTheList() throws Exception {
         spaceRepository.deleteAll();
         mockMvc.perform(get("/spaces/all"))
@@ -299,7 +303,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("Spaces not found!"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsListOfAllSpacesDTOIfUsersLogged() throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         Space space2 = new Space(user, "Test 2", new BigDecimal("80"));
@@ -322,7 +326,7 @@ class SpaceControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void findsAllAvailableSpacesAsLoggedUser() throws Exception{
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -337,7 +341,7 @@ class SpaceControllerTest {
                 .andExpect(content().contentType("application/json"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void findsAllAvailableSpacesInTimeRangeAsLoggedUser() throws Exception{
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -363,7 +367,7 @@ class SpaceControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorMessageIfNoSpacesInTheRangeAreAvailable() throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);
@@ -388,7 +392,7 @@ class SpaceControllerTest {
                 .andExpect(content().string("No available spaces found in the selected date range!"));
     }
     @Test
-    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     void returnsErrorMessageIfDatesAreInThePast() throws Exception {
         Space space = new Space(user, "Test", new BigDecimal("70"));
         spaceRepository.save(space);

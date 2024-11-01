@@ -1,11 +1,14 @@
 package com.example.bnb.controller;
 
+import com.example.bnb.configuration.EmailService;
 import com.example.bnb.model.Booking;
 import com.example.bnb.model.Space;
 import com.example.bnb.model.SpaceAvailability;
 import com.example.bnb.model.User;
+import com.example.bnb.repository.BookingRepository;
 import com.example.bnb.repository.SpaceAvailabilityRepository;
 import com.example.bnb.repository.SpaceRepository;
+import com.example.bnb.repository.UserRepository;
 import com.example.bnb.service.BookingService;
 import com.example.bnb.service.SpaceService;
 import jakarta.persistence.EntityNotFoundException;
@@ -30,14 +33,23 @@ public class BookingController {
     private SpaceService spaceService;
 
     @Autowired
-    SpaceRepository spaceRepository;
+    private SpaceRepository spaceRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private SpaceAvailabilityRepository spaceAvailabilityRepository;
 
-    public BookingController(BookingService bookingService, SpaceService spaceService, SpaceAvailabilityRepository spaceAvailabilityRepository) {
+    @Autowired
+    private EmailService emailService;
+
+    public BookingController(EmailService emailService, BookingService bookingService, SpaceService spaceService, UserRepository userRepository, SpaceRepository spaceRepository, SpaceAvailabilityRepository spaceAvailabilityRepository) {
+        this.emailService = emailService;
         this.bookingService = bookingService;
         this.spaceService = spaceService;
+        this.userRepository = userRepository;
+        this.spaceRepository = spaceRepository;
         this.spaceAvailabilityRepository = spaceAvailabilityRepository;
     }
 
@@ -69,6 +81,8 @@ public class BookingController {
         }
         else {
             List<Booking> bookings = bookingService.createBooking(id, loggedUser, dates);
+            emailService.newBookingRequestEmail(ownersEmail, spaceOwner.getName());
+            emailService.requestConfirmationEmail(loggedUser);
             return new ResponseEntity<>("Booking requested successfully! Please wait for approval.", HttpStatus.CREATED);
         }
     }
@@ -86,6 +100,11 @@ public class BookingController {
         }
         else {
             bookingService.approveBookings(id, bookingsIds);
+            User requestingUser = userRepository.findByBookingsId(bookingsIds.get(0)).orElseThrow();
+
+            emailService.requestConfirmedEmail(spaceOwner, space.getUser().getName());
+            emailService.bookingConfirmationEmail(requestingUser.getEmail(), requestingUser.getName());
+
             return new ResponseEntity<>("Bookings approved successfully!", HttpStatus.OK);
         }
     }
@@ -103,6 +122,10 @@ public class BookingController {
         }
         else {
             bookingService.denyBookings(id, bookingsIds);
+            User requestingUser = userRepository.findByBookingsId(bookingsIds.get(0)).orElseThrow();
+
+            emailService.bookingDenialEmail(requestingUser.getEmail(), requestingUser.getName());
+
             return new ResponseEntity<>("Bookings denied successfully!", HttpStatus.OK);
         }
     }
