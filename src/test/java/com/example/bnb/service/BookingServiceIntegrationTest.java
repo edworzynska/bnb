@@ -47,8 +47,11 @@ class BookingServiceIntegrationTest {
 
     private User user;
     private Space space;
+    private Space space2;
     private SpaceAvailability spaceAvailability;
     private SpaceAvailability spaceAvailability2;
+    private SpaceAvailability spaceAvailability3;
+    private SpaceAvailability spaceAvailability4;
 
     @BeforeEach
     void setUp() {
@@ -65,6 +68,13 @@ class BookingServiceIntegrationTest {
         spaceRepository.save(space);
         user.setSpaces(List.of(space));
 
+        space2 = new Space();
+        space2.setUser(user);
+        space2.setDescription("test description 2");
+        space2.setPricePerNight(new BigDecimal("700"));
+        spaceRepository.save(space2);
+        user.setSpaces(List.of(space2));
+
         spaceAvailability = new SpaceAvailability();
         spaceAvailability.setSpace(space);
         spaceAvailability.setDate(LocalDate.of(2025, 5, 1));
@@ -77,7 +87,19 @@ class BookingServiceIntegrationTest {
         spaceAvailability2.setIsAvailable(true);
         spaceAvailabilityRepository.save(spaceAvailability2);
 
-        space.setSpaceAvailabilities(List.of(spaceAvailability, spaceAvailability2));
+        spaceAvailability3 = new SpaceAvailability();
+        spaceAvailability3.setSpace(space2);
+        spaceAvailability3.setDate(LocalDate.of(2025, 5, 1));
+        spaceAvailability3.setIsAvailable(true);
+        spaceAvailabilityRepository.save(spaceAvailability3);
+
+        spaceAvailability4 = new SpaceAvailability();
+        spaceAvailability4.setSpace(space2);
+        spaceAvailability4.setDate(LocalDate.of(2025, 5, 2));
+        spaceAvailability4.setIsAvailable(true);
+        spaceAvailabilityRepository.save(spaceAvailability4);
+
+        space2.setSpaceAvailabilities(List.of(spaceAvailability3, spaceAvailability4));
 
     }
 
@@ -240,7 +262,7 @@ class BookingServiceIntegrationTest {
         assertNotNull(booking);
         assertEquals(PENDING, booking.get(0).getBookingStatus());
 
-        bookingService.denyBookings(bookingsIds);
+        bookingService.denyBookings(spaceId, bookingsIds);
         assertEquals(BookingStatus.DENIED, booking.get(0).getBookingStatus());
     }
     @Test
@@ -253,7 +275,7 @@ class BookingServiceIntegrationTest {
         assertEquals(PENDING, booking.get(0).getBookingStatus());
         assertEquals(PENDING, booking.get(1).getBookingStatus());
 
-        bookingService.denyBookings(bookingsIds);
+        bookingService.denyBookings(spaceId, bookingsIds);
         assertEquals(BookingStatus.DENIED, booking.get(0).getBookingStatus());
         assertEquals(BookingStatus.DENIED, booking.get(1).getBookingStatus());
     }
@@ -267,7 +289,7 @@ class BookingServiceIntegrationTest {
         assertEquals(PENDING, booking.get(0).getBookingStatus());
         assertEquals(PENDING, booking.get(1).getBookingStatus());
 
-        bookingService.denyBookings(List.of(bookingsIds.get(0)));
+        bookingService.denyBookings(spaceId, List.of(bookingsIds.get(0)));
         assertEquals(BookingStatus.DENIED, booking.get(0).getBookingStatus());
         assertEquals(PENDING, booking.get(1).getBookingStatus());
     }
@@ -284,7 +306,7 @@ class BookingServiceIntegrationTest {
         assertEquals(APPROVED, booking.get(0).getBookingStatus());
         assertEquals(PENDING, booking.get(1).getBookingStatus());
 
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> bookingService.denyBookings(bookingsIds));
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> bookingService.denyBookings(spaceId, bookingsIds));
         assertEquals("Unable to change the status from APPROVED", e.getMessage());
     }
     @Test
@@ -303,5 +325,33 @@ class BookingServiceIntegrationTest {
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> bookingService.approveBookings(spaceId, bookingsIds));
         assertEquals("Unable to change the status from DENIED", e.getMessage());
     }
+    @Test
+    void throwsIllegalArgumentExceptionIfApprovingBookingsThatArentAssignedToTheSameSpace() {
+        Long spaceId = space.getId();
+        Long space2id = space2.getId();
+        String userEmail = user.getEmail();
+        var booking = bookingService.createBooking(spaceId, userEmail, List.of(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 2)));
+        var bookingsIds = booking.stream().map(Booking::getId).toList();
+        assertNotNull(booking);
+        assertEquals(PENDING, booking.get(0).getBookingStatus());
+        assertEquals(PENDING, booking.get(1).getBookingStatus());
 
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> bookingService.approveBookings(space2id, bookingsIds));
+        assertEquals("Unable to process; one or more bookings aren't assigned to the space!", e.getMessage());
+
+    }
+    @Test
+    void throwsIllegalArgumentExceptionIfDenyingBookingsThatArentAssignedToTheSameSpace() {
+        Long spaceId = space.getId();
+        Long space2id = space2.getId();
+        String userEmail = user.getEmail();
+        var booking = bookingService.createBooking(spaceId, userEmail, List.of(LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 2)));
+        var bookingsIds = booking.stream().map(Booking::getId).toList();
+        assertNotNull(booking);
+        assertEquals(PENDING, booking.get(0).getBookingStatus());
+        assertEquals(PENDING, booking.get(1).getBookingStatus());
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> bookingService.denyBookings(space2id, bookingsIds));
+        assertEquals("Unable to process; one or more bookings aren't assigned to the space!", e.getMessage());
+    }
 }

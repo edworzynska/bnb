@@ -79,14 +79,13 @@ public class BookingController {
 
         String loggedUser = loggedUser();
         Space space = spaceRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-        Long spaceId = space.getId();
         var spaceOwner = space.getUser().getEmail();
 
         if (!loggedUser.equals(spaceOwner)){
             return new ResponseEntity<>("Access denied!", HttpStatus.FORBIDDEN);
         }
         else {
-            bookingService.approveBookings(spaceId, bookingsIds);
+            bookingService.approveBookings(id, bookingsIds);
             return new ResponseEntity<>("Bookings approved successfully!", HttpStatus.OK);
         }
     }
@@ -97,14 +96,13 @@ public class BookingController {
 
         String loggedUser = loggedUser();
         Space space = spaceRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-        Long spaceId = space.getId();
         var spaceOwner = space.getUser().getEmail();
 
         if (!loggedUser.equals(spaceOwner)){
             return new ResponseEntity<>("Access denied!", HttpStatus.FORBIDDEN);
         }
         else {
-            bookingService.denyBookings(bookingsIds);
+            bookingService.denyBookings(id, bookingsIds);
             return new ResponseEntity<>("Bookings denied successfully!", HttpStatus.OK);
         }
     }

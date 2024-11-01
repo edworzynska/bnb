@@ -119,4 +119,6 @@ public class BookingServiceTest {
         assertEquals("Please select dates!", e.getMessage());
         verify(bookingRepository, never()).save(any(Booking.class));
     }
+
+
 }

@@ -73,20 +73,10 @@ public class BookingService {
         if (bookingsToApprove.isEmpty()) {
             throw new EntityNotFoundException("No bookings found for the provided IDs.");
         }
-
-        Long firstUserId = bookingsToApprove.get(0).getUser().getId();
-        Long firstSpaceId = bookingsToApprove.get(0).getSpace().getId();
-
-        boolean isTheSameUser = bookingsToApprove.stream()
-                .allMatch(booking -> booking.getUser().getId().equals(firstUserId));
-        boolean isTheSameSpace = bookingsToApprove.stream()
-                .allMatch(booking -> booking.getSpace().getId().equals(firstSpaceId));
-
-        if (!isTheSameUser) {
-            throw new IllegalArgumentException("All bookings must belong to the same user!");
-        }
-        if (!isTheSameSpace){
-            throw new IllegalArgumentException("All bookings must refer to the same space!");
+        for (Booking booking : bookingsToApprove){
+            if (booking.getSpace().getId() != spaceId){
+                throw new IllegalArgumentException("Unable to process; one or more bookings aren't assigned to the space!");
+            }
         }
         List<LocalDate> datesToApprove = bookingsToApprove.stream()
                 .map(Booking::getDate)
@@ -104,34 +94,24 @@ public class BookingService {
     }
 
     @Transactional
-    public void denyBookings(List<Long> bookingsIds){
+    public void denyBookings(Long spaceId, List<Long> bookingsIds){
 
         List<Booking> bookingsToDeny = bookingRepository.findAllById(bookingsIds);
 
         if (bookingsToDeny.isEmpty()) {
             throw new EntityNotFoundException("No bookings found for the provided IDs.");
         }
-
-        Long firstUserId = bookingsToDeny.get(0).getUser().getId();
-        Long firstSpaceId = bookingsToDeny.get(0).getSpace().getId();
-
-        boolean isTheSameUser = bookingsToDeny.stream()
-                .allMatch(booking -> booking.getUser().getId().equals(firstUserId));
-        boolean isTheSameSpace = bookingsToDeny.stream()
-                .allMatch(booking -> booking.getSpace().getId().equals(firstSpaceId));
-
-        if (!isTheSameUser) {
-            throw new IllegalArgumentException("All bookings must belong to the same user!");
-        }
-        if (!isTheSameSpace) {
-            throw new IllegalArgumentException("All bookings must refer to the same space!");
+        for (Booking booking : bookingsToDeny){
+            if (booking.getSpace().getId() != spaceId){
+                throw new IllegalArgumentException("Unable to process; one or more bookings aren't assigned to the space!");
+            }
         }
         List<LocalDate> datesToDeny = bookingsToDeny.stream()
                 .map(Booking::getDate)
                 .distinct()
                 .toList();
 
-        if (!spaceAvailabilityService.isSpaceAvailableInDates(firstSpaceId, datesToDeny)){
+        if (!spaceAvailabilityService.isSpaceAvailableInDates(spaceId, datesToDeny)){
             throw new CannotCreateTransactionException("Unable to process the request - space is not available in selected dates.");
         }
         for (Booking booking : bookingsToDeny) {

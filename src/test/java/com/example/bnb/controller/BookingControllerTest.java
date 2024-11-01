@@ -67,6 +67,7 @@ class BookingControllerTest {
     private User userBooking;
     private User userBooking2;
     private Space testSpaceBooking1;
+    private Space testSpaceBooking2;
     private SpaceAvailability testSpaceAvailabilityBooking1;
     private SpaceAvailability testSpaceAvailabilityBooking2;
     private LocalDate localDate1;
@@ -94,7 +95,14 @@ class BookingControllerTest {
         testSpaceBooking1.setDescription("test");
         testSpaceBooking1.setPricePerNight(new BigDecimal("70"));
         spaceRepository.save(testSpaceBooking1);
-        userBooking.setSpaces(List.of(testSpaceBooking1));
+
+
+        testSpaceBooking2 = new Space();
+        testSpaceBooking2.setUser(userBooking);
+        testSpaceBooking2.setDescription("test 2");
+        testSpaceBooking2.setPricePerNight(new BigDecimal("70"));
+        spaceRepository.save(testSpaceBooking2);
+        userBooking.setSpaces(List.of(testSpaceBooking1, testSpaceBooking2));
 
         testSpaceAvailabilityBooking1 = new SpaceAvailability();
         testSpaceAvailabilityBooking1.setSpace(testSpaceBooking1);
@@ -319,5 +327,39 @@ class BookingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("[%s, %s]", idBooking, idBooking1)))
                 .andExpect(status().is3xxRedirection());
+    }
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void spaceOwnerApprovesBookingOfDifferentSpace() throws Exception {
+        Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
+        Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
+        bookingRepository.save(booking);
+        bookingRepository.save(booking1);
+        Long idBooking = booking.getId();
+        Long idBooking1 = booking1.getId();
+        Long id = testSpaceBooking2.getId();
+
+        mockMvc.perform(post("/booking/spaces/{id}/approve", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("[%s, %s]", idBooking, idBooking1)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Unable to process; one or more bookings aren't assigned to the space!"));
+    }
+    @Test
+    @WithUserDetails(value = "test@email.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    void spaceOwnerDeniesBookingOfDifferentSpace() throws Exception {
+        Booking booking = new Booking(testSpaceBooking1, userBooking, localDate1);
+        Booking booking1 = new Booking(testSpaceBooking1, userBooking, localDate2);
+        bookingRepository.save(booking);
+        bookingRepository.save(booking1);
+        Long idBooking = booking.getId();
+        Long idBooking1 = booking1.getId();
+        Long id = testSpaceBooking2.getId();
+
+        mockMvc.perform(post("/booking/spaces/{id}/deny", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("[%s, %s]", idBooking, idBooking1)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Unable to process; one or more bookings aren't assigned to the space!"));
     }
 }
