@@ -1,5 +1,6 @@
 package com.example.bnb.controller;
 
+import com.example.bnb.configuration.EmailService;
 import com.example.bnb.dto.Mapper;
 import com.example.bnb.dto.SpaceDTO;
 import com.example.bnb.model.Space;
@@ -19,6 +20,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/spaces")
 public class SpaceController {
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private SpaceService spaceService;
@@ -47,7 +51,7 @@ public class SpaceController {
         String loggedUser = loggedUser();
 
         Space space = spaceService.createSpace(loggedUser, description, price);
-
+        emailService.postingSpaceEmail(loggedUser, space.getUser().getName());
         return new ResponseEntity<>("Space posted successfully!", HttpStatus.CREATED);
     }
     @GetMapping("/{id}")

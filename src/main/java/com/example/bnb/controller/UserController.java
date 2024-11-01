@@ -1,5 +1,6 @@
 package com.example.bnb.controller;
 
+import com.example.bnb.configuration.EmailService;
 import com.example.bnb.service.UserService;
 import jakarta.persistence.EntityExistsException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,9 @@ public class UserController {
     private UserService userService;
 
     @Autowired
+    private EmailService emailService;
+
+    @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
     }
@@ -29,6 +33,7 @@ public class UserController {
              @RequestParam String password){
 
         userService.createUser(email, name, password);
+        emailService.registrationEmail(email, name);
         return new ResponseEntity<>("User registered successfully! You can sign in.", HttpStatus.CREATED);
     }
 }
