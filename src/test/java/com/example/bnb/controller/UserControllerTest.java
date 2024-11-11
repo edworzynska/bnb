@@ -1,15 +1,20 @@
 package com.example.bnb.controller;
 
+import com.example.bnb.configuration.EmailService;
 import com.example.bnb.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -23,6 +28,9 @@ class UserControllerTest {
     @Autowired
     private UserController userController;
 
+    @MockBean
+    private EmailService emailService;
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -33,6 +41,8 @@ class UserControllerTest {
                 .param("password", "Password1!"))
                 .andExpect(status().isCreated())
                 .andExpect(content().string("User registered successfully! You can sign in."));
+
+        verify(emailService, times(1)).registrationEmail(Mockito.anyString(), Mockito.anyString());
     }
 
     @Test

@@ -193,7 +193,7 @@ class SpaceServiceTest {
     @Test
     void returnsListOfAvailableSpaces() {
 
-        when(spaceRepository.findAllAvailableSpaces()).thenReturn(List.of(mockedSpace, mockedSpace2));
+        when(spaceRepository.findAllBySpaceAvailabilitiesIsAvailableIsTrue()).thenReturn(List.of(mockedSpace, mockedSpace2));
         var result = spaceService.findAvailable();
 
         assertNotNull(result);

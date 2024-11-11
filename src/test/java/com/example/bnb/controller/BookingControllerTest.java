@@ -12,9 +12,11 @@ import com.example.bnb.repository.UserRepository;
 import com.example.bnb.service.SpaceAvailabilityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.TestExecutionEvent;
@@ -28,6 +30,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -44,7 +48,7 @@ class BookingControllerTest {
     @Autowired
     private SpaceController spaceController;
 
-    @Autowired
+    @MockBean
     private EmailService emailService;
 
     @Autowired
@@ -142,6 +146,8 @@ class BookingControllerTest {
                         .param("endDate", "5/2/25"))
                 .andExpect(status().isCreated())
                 .andExpect(content().string("Booking requested successfully! Please wait for approval."));
+
+        verify(emailService, times(1)).newBookingRequestEmail(Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
@@ -229,6 +235,8 @@ class BookingControllerTest {
                         .content(String.format("[%s, %s]", idBooking, idBooking1)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Bookings approved successfully!"));
+        verify(emailService, times(1)).bookingConfirmationEmail(Mockito.anyString(), Mockito.anyString());
+        verify(emailService, times(1)).requestConfirmedEmail(Mockito.anyString(), Mockito.anyString());
     }
     @Test
     @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)
@@ -297,6 +305,8 @@ class BookingControllerTest {
                         .content(String.format("[%s, %s]", idBooking, idBooking1)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Bookings denied successfully!"));
+
+        verify(emailService, times(1)).bookingDenialEmail(Mockito.anyString(), Mockito.anyString());
     }
     @Test
     @WithUserDetails(value = "bnbtestaddress@gmail.com", setupBefore = TestExecutionEvent.TEST_EXECUTION)

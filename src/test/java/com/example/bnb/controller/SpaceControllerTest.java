@@ -9,9 +9,11 @@ import com.example.bnb.repository.SpaceRepository;
 import com.example.bnb.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithAnonymousUser;
@@ -26,6 +28,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -39,7 +43,7 @@ class SpaceControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
+    @MockBean
     private EmailService emailService;
 
     @Autowired
@@ -87,6 +91,8 @@ class SpaceControllerTest {
                 .param("price", "40"))
                 .andExpect(status().isCreated())
                 .andExpect(content().string("Space posted successfully!"));
+
+        verify(emailService, times(1)).postingSpaceEmail(Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
@@ -198,6 +204,8 @@ class SpaceControllerTest {
                 .param("endDate", "12/10/24"))
                 .andExpect(status().isCreated())
                 .andExpect(content().string("Availability added successfully!"));
+
+        verify(emailService, times(1)).spaceUpdateEmail(Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
