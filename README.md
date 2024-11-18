@@ -16,9 +16,9 @@ The __BnB Booking Platform API__ allows users to list living spaces, manage book
 
 ## The API allows:
 
-- User Registration with password and email validation
-- Listing and Booking Spaces, with features to add available dates, view and filter spaces by date
-- Booking Management including approving or denying booking requests
+- User registration with password and email validation
+- Listing and booking Spaces, with features to add available dates, view and filter spaces by date
+- Booking management including approving or denying booking requests
 - Email Notifications informing users of booking updates and status changes
 
 ## Key Learnings
