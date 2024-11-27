@@ -88,13 +88,13 @@ public class BookingService {
                 .toList();
 
         if (!spaceAvailabilityService.isSpaceAvailableInDates(spaceId, datesToApprove)){
-            throw new CannotCreateTransactionException("Unable to approve the request - space is not available in selected dates.");
+            throw new CannotCreateTransactionException("Unable to approve the request - space is not available in selected dates."); //which dates exactly? would be useful to know
         }
         for (Booking booking : bookingsToApprove){
             booking.setBookingStatus(BookingStatus.APPROVED);
         }
 
-        bookingRepository.saveAll(bookingsToApprove);
+        bookingRepository.saveAll(bookingsToApprove);//there is a race condition here could lead to some nasty bugs in real life - the whole operation should be transactional!
         spaceAvailabilityService.setUnavailable(spaceId, datesToApprove);
 
     }

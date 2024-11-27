@@ -13,6 +13,9 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.security.InvalidParameterException;
 
 @RestControllerAdvice
+// good idea to have one bad idea to drive logic from exceptions. pattern "throw execption somewhere in the code and catch it in the handler to set a nice response" should be avoided if possible as exception catching can be expensive and quickly turn difficult to debug so 
+// NoResourceFoundException is a good idea, CannotCreateTransactionException probably should be handled in the code, EntityNotFoundException should becode NoResourceFoundException etc...
+// ideally this list below is kept reasonably short and non-specific hope this make sense
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityExistsException.class)

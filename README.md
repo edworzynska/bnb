@@ -45,3 +45,7 @@ Navigate to the project directory and use Gradle to build and run the app:
 ./gradlew build
 ./gradlew run
 The application will start on the default port: http://localhost:8080
+
+
+Decent README 
+next time less tech stack and more api functionality, installation and setup 

@@ -1,11 +1,13 @@
 package com.example.bnb.configuration;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
+//this is not a configuration class, package should be different 
 public class EmailService {
 
     @Autowired
@@ -29,6 +31,8 @@ public class EmailService {
         message.setTo(to);
         message.setSubject("Welcome to BnB!");
         message.setText(String.format("Hello, %s\nThank you for signing up to BnB!\n\nBest regards,\nBnB Team", name));
+
+        //why not simply reuse sendEmail above?
         javaMailSender.send(message);
     }
     public void postingSpaceEmail(String to, String name){

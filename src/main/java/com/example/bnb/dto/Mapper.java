@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 @Component
+//mapper is not a dto so probably should be in a mapper package
 public class Mapper {
 
     private UserRepository userRepository;
