@@ -1,6 +1,6 @@
 # BnB Booking Platform API
 
-The __BnB Booking Platform API__ allows users to list living spaces, manage bookings, and receive notifications. This __RESTful API__ supports functionality to create, view, book, and manage users' spaces with an integrated email notification service. This BnB API project demonstrates foundational skills in __Spring Boot__, with secure password storage and comprehensive database interaction managed by JPA and Hibernate.
+The __BnB Booking Platform API__ allows users to list living spaces and offer them to other users of the platform. This __RESTful API__ supports functionality to create, view, book, and manage users' spaces with an integrated email notification service. 
 
 ## Tech Stack
 
@@ -17,7 +17,7 @@ The __BnB Booking Platform API__ allows users to list living spaces, manage book
 ## The API allows:
 
 - User registration with password and email validation
-- Listing and booking Spaces, with features to add available dates, view and filter spaces by date
+- Listing and booking spaces, with features to add available dates, view and filter spaces by date
 - Booking management including approving or denying booking requests
 - Email Notifications informing users of booking updates and status changes
 
