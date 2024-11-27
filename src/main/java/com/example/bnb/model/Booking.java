@@ -44,7 +44,7 @@ public class Booking {
         if (this.bookingStatus == BookingStatus.PENDING) {
             this.bookingStatus = bookingStatus;
         } else {
-            throw new IllegalStateException("Unable to change the status from " + this.bookingStatus);
+            throw new IllegalStateException("Unable to change the status from " + this.bookingStatus);//not loving this such logic normally should be validated and handles waaay upstream from the model class
         }
     }
 }

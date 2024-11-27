@@ -8,7 +8,7 @@ import java.time.LocalDate;
 @Data
 @Entity
 @Table(name = "Space_availabilities")
-public class SpaceAvailability {
+public class SpaceAvailability { //this should be derived from space bookings instead of being an entity 
 
     @Id
     @GeneratedValue

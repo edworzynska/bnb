@@ -37,9 +37,9 @@ public class SpaceService {
     }
 
     @Transactional
-    public Space createSpace(String email, String description, BigDecimal pricePerNight){
+    public Space createSpace(String email, String description, BigDecimal pricePerNight){ //could be accepting a DTO object with all the details in to make it nicer 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("User doesn't exist!"));
+                .orElseThrow(() -> new EntityNotFoundException("User doesn't exist!")); 
 
         Space space = new Space();
         space.setUser(user);
@@ -59,7 +59,7 @@ public class SpaceService {
         Space space = spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new EntityNotFoundException("Space not found!"));
         if (dates.isEmpty()){
-            throw new InvalidParameterException("Please select dates!");
+            throw new InvalidParameterException("Please select dates!");//check of user input (validation) belongs in controller (or additional validation layer)
         }
         for (LocalDate date : dates){
             SpaceAvailability spaceAvailability = new SpaceAvailability();
@@ -73,7 +73,7 @@ public class SpaceService {
     public List<Space> getAll(){
         List<Space> allSpaces = spaceRepository.findAll();
         if (allSpaces.isEmpty()){
-            throw new EntityNotFoundException("Spaces not found!");
+            throw new EntityNotFoundException("Spaces not found!");//should return empty list not this exception
         }
         return allSpaces;
     }
@@ -82,7 +82,7 @@ public class SpaceService {
         List<Space> availableSpaces = spaceRepository.findAllBySpaceAvailabilitiesIsAvailableIsTrue();
 
         if (availableSpaces.isEmpty()){
-            throw new EntityNotFoundException("No available spaces found!");
+            throw new EntityNotFoundException("No available spaces found!"); //find should return empty list not this exception
         }
         return availableSpaces;
     }
@@ -91,7 +91,7 @@ public class SpaceService {
         List<Space> availableSpaces = spaceRepository.findSpacesWithAvailableDates(dates, dateCount);
 
         if (availableSpaces.isEmpty()) {
-            throw new EntityNotFoundException("No available spaces found in the selected date range!");
+            throw new EntityNotFoundException("No available spaces found in the selected date range!");//find should return empty list not this exception
         }
         return availableSpaces;
     }

@@ -23,7 +23,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/booking")
+@RequestMapping("/booking") //singular - bad
 public class BookingController {
 
     @Autowired
@@ -44,6 +44,7 @@ public class BookingController {
     @Autowired
     private EmailService emailService;
 
+//you should not need this constructor here as everything is autowired? 
     public BookingController(EmailService emailService, BookingService bookingService, SpaceService spaceService, UserRepository userRepository, SpaceRepository spaceRepository, SpaceAvailabilityRepository spaceAvailabilityRepository) {
         this.emailService = emailService;
         this.bookingService = bookingService;
@@ -53,7 +54,7 @@ public class BookingController {
         this.spaceAvailabilityRepository = spaceAvailabilityRepository;
     }
 
-    private String loggedUser(){
+    private String loggedUser(){ //this should be reused outside of this class
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!authentication.isAuthenticated()){
             throw new SecurityException("Please log in to proceed.");
@@ -61,7 +62,7 @@ public class BookingController {
         return authentication.getName();
     }
 
-    @PostMapping("/spaces/{id}/request-booking")
+    @PostMapping("/spaces/{id}/request-booking")// bad; I showed some examples in spaces so will skip it here 
     public ResponseEntity<Object> requestBooking(
             @PathVariable Long id,
             @RequestParam LocalDate startDate,
@@ -71,18 +72,18 @@ public class BookingController {
             return new ResponseEntity<>("Please select valid dates!", HttpStatus.BAD_REQUEST);
         }
 
-        List<LocalDate> dates = startDate.datesUntil(endDate).toList();
+        List<LocalDate> dates = startDate.datesUntil(endDate).toList();//lots of bookings get created as a result probably would make more sense to keep date range in one booking 
         String loggedUser = loggedUser();
         User spaceOwner = spaceRepository.findById(id).orElseThrow(EntityNotFoundException::new).getUser();
         var ownersEmail = spaceOwner.getEmail();
 
         if (loggedUser.equals(ownersEmail)){
-            return new ResponseEntity<>("Unable to request a booking in owned space!", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Unable to request a booking in owned space!", HttpStatus.BAD_REQUEST); // as an owner I probably want to be able to book my own space so other people don't use it when I don't want them to 
         }
         else {
             List<Booking> bookings = bookingService.createBooking(id, loggedUser, dates);
             emailService.newBookingRequestEmail(ownersEmail, spaceOwner.getName());
-            emailService.requestConfirmationEmail(loggedUser);
+            emailService.requestConfirmationEmail(loggedUser);//
             return new ResponseEntity<>("Booking requested successfully! Please wait for approval.", HttpStatus.CREATED);
         }
     }

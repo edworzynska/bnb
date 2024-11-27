@@ -8,16 +8,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-@Data
+@Data//https://projectlombok.org/features/Value has much more sense for DTOs
 public class SpaceDTO {
 
     private Long spaceId;
     private String ownerName;
     private String description;
     private BigDecimal pricePerNight;
-    private Map<LocalDate, Boolean> availableDates = new TreeMap<>();
+    private Map<LocalDate, Boolean> availableDates = new TreeMap<>(); // if anything this should be booked dates, no? TreeMap makes it an interesting choice can you justify this?
 
-    public SpaceDTO() {
+    public SpaceDTO() {//@NoArgsConstructor would cover it
     }
 
     public SpaceDTO(Long spaceId, String ownerName, String description, BigDecimal pricePerNight) {
@@ -28,7 +28,7 @@ public class SpaceDTO {
     }
 
     public SpaceDTO(Long spaceId, String ownerName, String description,
-                    BigDecimal pricePerNight, Map<LocalDate, Boolean> availableDates) {
+                    BigDecimal pricePerNight, Map<LocalDate, Boolean> availableDates) { //how is it different from Lomboks default constructor?
         this.spaceId = spaceId;
         this.ownerName = ownerName;
         this.description = description;
